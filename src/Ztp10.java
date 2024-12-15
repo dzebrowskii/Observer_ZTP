@@ -126,6 +126,23 @@ class CreditCardOfferObserver implements BankObserver {
     }
 }
 
+// Moduł bezpieczeństwa
+class SecurityObserver implements BankObserver {
+    private double suspiciousTransactionThreshold;
+
+    public SecurityObserver(double suspiciousTransactionThreshold) {
+        this.suspiciousTransactionThreshold = suspiciousTransactionThreshold;
+    }
+
+    @Override
+    public void notify(BankAccount account, String operation, double amount) {
+        if ("Withdraw".equals(operation) && amount >= suspiciousTransactionThreshold) {
+            System.out.printf("[SecurityAlert] Podejrzana operacja: wypłata %.2f przekracza próg %.2f. Klient: %s.%n",
+                    amount, suspiciousTransactionThreshold, account.getAccountHolder());
+        }
+    }
+}
+
 
 public class Ztp10 {
     public static void main(String[] args) {
@@ -136,16 +153,16 @@ public class Ztp10 {
         account.addObserver(new LoanOfferObserver(1000));
         account.addObserver(new SavingsOfferObserver(5000));
         account.addObserver(new CreditCardOfferObserver(3));
+        account.addObserver(new SecurityObserver(2000)); // Rejestracja modułu bezpieczeństwa
 
         // Operacje na koncie
         account.deposit(2000);  // Oferuje lokatę
         account.deposit(6000);  // Oferuje lokatę
         account.withdraw(1500); // Brak akcji
-        account.withdraw(2000); // Brak akcji
-        account.withdraw(2500); // Oferuje kartę kredytową
-        account.withdraw(3000); // Zmień wypłatę na taką, która nie przekracza stanu konta
+        account.withdraw(2000); // Podejrzana operacja (SecurityAlert)
+        account.withdraw(2500); // Oferuje kartę kredytową, podejrzana operacja (SecurityAlert)
+        account.withdraw(3000); // Podejrzana operacja (SecurityAlert)
 
-        // Wyświetlenie końcowego stanu konta
         System.out.printf("%nKońcowy stan konta: %.2f%n", account.getBalance());
     }
 }
